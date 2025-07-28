@@ -1,50 +1,149 @@
-// Step 1: Create the map (before any layers!)
 const map = L.map('map', {
   crs: L.CRS.Simple,
-  minZoom: -1,
+  minZoom: -3,
   maxZoom: 4
 });
 
-// Step 2: Define map bounds
+
+
 const mapBounds = [[0, 0], [2000, 2000]];
 
-// Step 3: Add image overlay
+
 const image = L.imageOverlay('map.png', mapBounds).addTo(map);
 
-// Step 4: Fit map to image bounds
 map.fitBounds(mapBounds);
 
-// Flip Y function (for 2000x2000 image)
+const airportLayer = L.layerGroup().addTo(map);
+
 function flipY(y) {
   return 2000 - y;
 }
 
+
+
+
+
+
+async function loadTFRs() {
+  try {
+    const response = await fetch("http://127.0.0.1:5000/airports");
+    const data = await response.json();
+
+    if (!data.tfrs || data.tfrs.length === 0) {
+      console.log("No TFR zones found.");
+      return;
+    }
+
+    data.tfrs.forEach(tfr => {
+      if (!tfr.center || !tfr.radius || !tfr.color || !tfr.info) {
+        console.warn("Incomplete TFR data:", tfr);
+        return;
+      }
+
+      L.circle(tfr.center, {
+        radius: tfr.radius,
+        color: tfr.color,
+        fillColor: tfr.color,
+        fillOpacity: 0.3,
+      }).addTo(map).bindPopup(tfr.info + (tfr.expires ? `<br><i>Expires: ${new Date(tfr.expires).toLocaleString()}</i>` : ''));
+    });
+  } catch (err) {
+    console.error("Error loading TFR zones:", err);
+  }
+}
+
+
+loadTFRs();
+
+
+const staticMarkers = [
+  { code: "OCNTRK1", name: "OCNTRK1", coords: [900, 600], notams: "UNCONTROLLED AIRSPACE, USE COMMS FOR TRAFFIC POSITION INFO. PARTICAL BVIA CONTROL" },
+  { code: "OCNTRK2", name: "OCNTRK2", coords: [900, 600], notams: "UNCONTROLLED AIRSPACE, USE COMMS FOR TRAFFIC POSITION INFO. PARTICAL BVIA CONTROL" },
+  { code: "OCNTRK4", name: "OCNTRK4", coords: [750, 390], notams: "UNCONTROLLED AIRSPACE, USE COMMS FOR TRAFFIC POSITION INFO. PARTICAL BVIA CONTROL" }
+];
+
+async function loadAirportData() {
+  try {
+    const response = await fetch("http://localhost:5000/airports");
+    const data = await response.json();
+
+    airportLayer.clearLayers();
+
+    for (const code in airports) {
+      if (staticMarkers.find(m => m.code === code)) continue; 
+
+      const airport = airports[code];
+      const backendInfo = data[code] || {};
+
+      const metar = backendInfo.metar || airport.metar || "Unavailable";
+      const notams = Array.isArray(backendInfo.notam)
+                     ? backendInfo.notam.join("<br>")
+                     : (Array.isArray(airport.notams) ? airport.notams.join("<br>") : airport.notams || "None");
+
+      L.marker(airport.coords).addTo(airportLayer)
+        .bindPopup(`
+          <b>${airport.name}</b><br>
+          METAR: ${metar}<br>
+          NOTAMs:<br>${notams}<br>
+          ${airport.image ? `<img src="${airport.image}" width="150">` : ""}
+        `);
+    }
+
+
+    staticMarkers.forEach(({ code, name, coords, notams }) => {
+      L.marker(coords).addTo(airportLayer)
+        .bindPopup(`
+          <b>${name}</b><br>
+          NOTAMs:<br>${notams}<br>
+        `);
+    });
+
+  } catch (error) {
+    console.error("Error loading airport data:", error);
+  }
+}
+
+
+
+loadAirportData(); 
+
+
+document.getElementById("refreshBtn").addEventListener("click", loadAirportData);
+
+
+
+
 const airports = {
-  BRUY: { name: "BRUY", coords: [500, 1000], metar: "METAR BRUY 071200Z 21015KT 10SM CLR 24/16 A2992", notams: "No NOTAMs", image: "BRUY.png" },
-  BRYA: { name: "BRYA", coords: [250, 1100], metar: "METAR BRYA 071200Z 22012KT 9SM FEW020 22/15 A2985", notams: "Runway 12/30 closed", image: "BRYA.png" },
-  BVIA: { name: "BVIA", coords: [1525, 250], metar: "METAR BVIA 071200Z 23010KT 10SM CLR 25/17 A3001", notams: "Taxiway B maintenance", image: "BVIA.png" },
-  BVTA: { name: "BVTA", coords: [1775, 400], metar: "METAR BVTA 071200Z 24008KT 10SM CLR 26/18 A2998", notams: "No NOTAMs", image: "BVTA.jpg" },
-  BREW: { name: "BREW", coords: [1885, 1700], metar: "METAR BREW 071200Z 19012KT 10SM CLR 27/19 A2990", notams: "Construction near ramp", image: "BREW.png" },
-  BVER: { name: "BVER", coords: [315, 125], metar: "METAR BVER 071200Z 20014KT 10SM CLR 23/14 A2980", notams: "Glider activity", image: "BVER.png" }
+  BRUY: { name: "BRUY", coords: [500, 1000], image: "BRUY.png" },
+  BRYA: { name: "BRYA", coords: [250, 1100], image: "BRYA.png" },
+  BVIA: { name: "BVIA", coords: [1525, 250], image: "BVIA.png" },
+  BVTA: { name: "BVTA", coords: [1775, 400], image: "BVTA.png" },
+  BREW: { name: "BREW", coords: [1885, 1700], image: "BREW.png" },
+  BVER: { name: "BVER", coords: [315, 125], image: "BVER.png" },
 };
 
-// Add markers with interactive popups (clickable only)
 for (const code in airports) {
   const a = airports[code];
   L.marker(a.coords).addTo(map)
-    .bindPopup(`
+    .bindPopup(`a
       <b>${a.name}</b><br>
       METAR: ${a.metar}<br>
       NOTAMs: ${a.notams}<br>
-      <img src="${a.image}" width="150">
     `);
 }
 
-// 5. ATC zones as transparent circles
 const atcZones = [
-  { center: airports.BVIA.coords, radius: 200, name: "BVIA Tower" },
-  { center: airports.BVER.coords, radius: 150, name: "BVER Ground" },
+  { center: airports.BVIA.coords, radius: 750, name: "BVIA Center" },
+  { center: airports.BVER.coords, radius: 150, name: "BVER Traffic" },
+  { center: airports.BREW.coords, radius: 750, name: "BREW Center" },
+  { center: airports.BVIA.coords, radius: 150, name: "BVIA Tower" },
+  { center: airports.BRYA.coords, radius: 150, name: "BRYA Tower" },
+
+  { center: airports.BRUY.coords, radius: 100, name: "BRUY Area Control (BRYA)" },
+  { center: airports.BVER.coords, radius: 150, name: "BRYA Center" },
   { center: airports.BREW.coords, radius: 250, name: "BREW Center" },
+  { center: airports.BVIA.coords, radius: 150, name: "BVIA Tower" },
+  { center: airports.BVIA.coords, radius: 150, name: "BVIA Tower" },
 ];
 
 atcZones.forEach(zone => {
@@ -63,7 +162,7 @@ const graph = {
   BRICK: ["VILLE", "READ", "TRAM"],
   READ: ["BRICK", "MIUT"],
   MIUT: ["READ", "YTEN"],
-  TREA: ["VILLE", "TRAM"],
+  TREA: ["VILLE", "TRAM", "BRICK"],
   TRAM: ["BRICK", "TREA", "YTEN"],
   YTEN: ["MIUT", "TRAM", "ENRG"],
 
@@ -89,30 +188,35 @@ const graph = {
   BRUY: ["BRYA"]
 };
 
+const mapHeight = 2000;
+
+function flipY(y) {
+  return mapHeight - y;
+}
 const waypointGraph = graph;
 
 const waypoints = {
-  VILLE: { coords: [487, 404] },
-  BRICK: { coords: [278, 637] },
-  MIUT: { coords: [104, 902] },
-  YTEN: { coords: [102, 1255] },
-  READ: { coords: [227, 957] },
-  TREA: { coords: [472, 865] },
-  TRAM: { coords: [332, 1115] },
-  ENRG: { coords: [226, 1790] },
-  TRAC: { coords: [430, 1571] },
-  EMRG: { coords: [284, 1790] },
-  CANT: { coords: [544, 1765] },
-  YNKE: { coords: [1591, 36] },
-  RTEA: { coords: [1779, 157] },
-  REAM: { coords: [1361, 1085] },
-  YTFA: { coords: [1563, 1085] },
-  RVDA: { coords: [1671, 959] },
-  OCAE: { coords: [1868, 1280] },
-  YANN: { coords: [1669, 1298] },
-  WATE: { coords: [1506, 1280] },
-  KEEP: { coords: [1416, 1266] },
-  REAP: { coords: [1331, 1346] }
+  VILLE: { coords: [flipY(485), 406] },
+  BRICK: { coords: [flipY(277), 641] },
+  MIUT: { coords: [flipY(103), 904] },
+  YTEN: { coords: [flipY(103), 1257] },
+  READ: { coords: [flipY(227), 959] },
+  TREA: { coords: [flipY(471), 870] },
+  TRAM: { coords: [flipY(343), 1116] },
+  ENRG: { coords: [flipY(227), 1444] },
+  TRAC: { coords: [flipY(429), 1574] },
+  EMRG: { coords: [flipY(284), 1790] },
+  CANT: { coords: [flipY(544), 1767] },
+  YNKE: { coords: [flipY(1587), 38] },
+  RTEA: { coords: [flipY(1774), 160] },
+  REAM: { coords: [flipY(1358), 1085] },
+  YTFA: { coords: [flipY(1562), 1085] },
+  RVDA: { coords: [flipY(1669), 959] },
+  OCAE: { coords: [flipY(1867), 1280] },
+  YANN: { coords: [flipY(1665), 1297] },
+  WATE: { coords: [flipY(1505), 1335] },
+  KEEP: { coords: [flipY(1415), 1265] },
+  REAP: { coords: [flipY(1329), 1347] }
 };
 
 function distance(a, b) {
@@ -142,7 +246,7 @@ function findPath(start, end) {
 
     const neighbors = waypointGraph[current] || [];
     for (const neighbor of neighbors) {
-      if (!(neighbor in waypoints)) continue; // 🔥 SKIP invalid neighbors
+      if (!(neighbor in waypoints)) continue; 
 
       const alt = distances[current] + distance(waypoints[current].coords, waypoints[neighbor].coords);
       if (alt < distances[neighbor]) {
@@ -178,7 +282,7 @@ function findClosestWaypoint(coords) {
   return closest;
 }
 
-// Generate route between 2 ICAOs
+
 function findRoute() {
   const dep = document.getElementById('dep-icao').value.toUpperCase();
   const arr = document.getElementById('arr-icao').value.toUpperCase();
@@ -213,7 +317,7 @@ function findRoute() {
   const route = routeParts.join(" ");
   document.getElementById("route-waypoints").value = route;
 
-  // Remove previous route line if it exists
+
   if (window.routeLine) map.removeLayer(window.routeLine);
 
   const routeCoords = [
@@ -222,11 +326,11 @@ function findRoute() {
     arrCoords
   ];
 
-  // === Calculate PIN time and Total time ===
+
   const now = new Date();
   const pinTimeStr = now.toTimeString().split(" ")[0].slice(0, 5); // HH:MM
 
-  // Estimate total distance in pixels
+
   let totalDist = 0;
   let prevCoord = depCoords;
   for (const wp of path) {
@@ -236,18 +340,18 @@ function findRoute() {
   }
   totalDist += distance(prevCoord, arrCoords);
 
-  // Convert to time — assume 0.1 pixels = 1 km, speed = 278 km/h
+  // 0.1 pixels = 1 km, speed = 278 km/h
   const pixelsPerKm = 0.1;
   const speedKmPerH = 278;
   const distKm = totalDist * pixelsPerKm;
   const timeHours = distKm / speedKmPerH;
   const totalMins = Math.ceil(timeHours * 60);
 
-  // Update form fields
+
   document.getElementById("pin-time").value = pinTimeStr;
   document.getElementById("total-time").value = `${totalMins} min`;
 
-  // Draw route line
+
   window.routeLine = L.polyline(routeCoords, {
     color: 'red',
     weight: 3,
@@ -365,15 +469,64 @@ function openATCView() {
   document.getElementById("atc-panel").style.display = "block";
   document.getElementById("back-btn").style.display = "inline-block";
 
-  // Populate ATC info
+
   document.getElementById("atc-pin-time").textContent = document.getElementById("pin-time").value;
-  document.getElementById("atc-hold-ocean").textContent = "No"; // Customize logic as needed
+  document.getElementById("atc-hold-ocean").textContent = "No";
   document.getElementById("atc-route").textContent = `${document.getElementById("dep-icao").value} → ${document.getElementById("arr-icao").value}`;
   document.getElementById("atc-waypoints").textContent = document.getElementById("route-waypoints").value;
   document.getElementById("atc-ac-type").textContent = document.getElementById("aircraft-type").value;
   document.getElementById("atc-callsign").textContent = document.getElementById("airline").value + document.getElementById("flight-number").value;
   document.getElementById("atc-reg").textContent = document.getElementById("registration").value;
 }
+
+
+
+async function handleGenerate() {
+  const bfpData = {
+    callsign: document.getElementById("registration").value,
+    departure: document.getElementById("dep-icao").value,
+    arrival: document.getElementById("arr-icao").value,
+    aircraft: document.getElementById("aircraft-type").value
+  };
+  const airline = document.getElementById("airline").value;
+  const flightNumber = document.getElementById("flight-number").value;
+  const aircraftType = document.getElementById("aircraft-type").value;
+  const variant = document.getElementById("variant").value;
+  bfpData.callsign = `${airline}${flightNumber}`.trim();
+  bfpData.aircraft = `${aircraftType} ${variant}`.trim();
+
+  if (!bfpData.callsign || !bfpData.departure || !bfpData.arrival || !bfpData.aircraft) {
+    alert("Missing flight plan data.");
+    return;
+  }
+
+  try {
+    const response = await fetch("http://127.0.0.1:5000/submit_flightplan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(bfpData)
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      alert("Flight plan saved successfully!");
+
+
+      exportBFP();
+      exportPOFP();
+    } else {
+      alert("Error saving flight plan: " + (data.error || "Unknown error"));
+    }
+  } catch (err) {
+    console.error("Fetch error:", err);
+    alert("Failed to send flight plan to the server.");
+  }
+}
+
+
+
+
 
 function closeATCView() {
   document.body.classList.remove("atc-view");
@@ -385,4 +538,3 @@ function closeATCView() {
 ["cargo", "fuel", "pax"].forEach(id => {
   document.getElementById(id).addEventListener("input", updateFullWeight);
 });
-
