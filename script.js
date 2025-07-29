@@ -26,7 +26,7 @@ function flipY(y) {
 
 async function loadTFRs() {
   try {
-    const response = await fetch("https://brfpb.onrender.com/airports");
+    const response = await fetch("https://brfp.onrender.com/airports");
     const data = await response.json();
 
     if (!data.tfrs || data.tfrs.length === 0) {
@@ -64,7 +64,7 @@ const staticMarkers = [
 
 async function loadAirportData() {
   try {
-    const response = await fetch("https://brfpb.onrender.com/airports");
+    const response = await fetch("https://brfp.onrender.com/airports");
     const data = await response.json();
 
     airportLayer.clearLayers();
