@@ -501,7 +501,7 @@ async function handleGenerate() {
   }
 
   try {
-    const response = await fetch("https://brfpb.onrender.com/submit_flightplan", {
+    const response = await fetch("https://brfp.onrender.com/submit_flightplan", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(bfpData)
