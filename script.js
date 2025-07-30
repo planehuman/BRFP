@@ -138,12 +138,10 @@ const atcZones = [
   { center: airports.BREW.coords, radius: 750, name: "BREW Center" },
   { center: airports.BVIA.coords, radius: 150, name: "BVIA Tower" },
   { center: airports.BRYA.coords, radius: 150, name: "BRYA Tower" },
-
+  { center: airports.BRYA.coords, radius: 250, name: "BRYA Center" },
   { center: airports.BRUY.coords, radius: 100, name: "BRUY Area Control (BRYA)" },
-  { center: airports.BVER.coords, radius: 150, name: "BRYA Center" },
-  { center: airports.BREW.coords, radius: 250, name: "BREW Center" },
-  { center: airports.BVIA.coords, radius: 150, name: "BVIA Tower" },
-  { center: airports.BVIA.coords, radius: 150, name: "BVIA Tower" },
+  { center: airports.BVER.coords, radius: 150, name: "BVER TRAFFIC" },
+  { center: airports.BREW.coords, radius: 250, name: "BREW Tower" },
 ];
 
 atcZones.forEach(zone => {
