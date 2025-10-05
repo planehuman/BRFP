@@ -1,300 +1,173 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>BRFP - Brick Rigs Flight Planner</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRFP Map System</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #0b0b12;
+    color: white;
+    margin: 0;
+    overflow: hidden;
+  }
 
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+  #map {
+    height: 100vh;
+    width: 100%;
+  }
 
-    :root {
-      --primary: #4CAF50;
-      --secondary: #222;
-      --bg: #f8f7f2;
-      --accent: #c1ff72;
-      --text: #222;
-      --muted: #555;
-      --radius: 10px;
-    }
+  /* --- Control Panel --- */
+  #panel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 320px;
+    background: rgba(20, 20, 35, 0.9);
+    padding: 15px;
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 20px rgba(0,0,0,0.4);
+    z-index: 1000;
+  }
 
-    * {
-      box-sizing: border-box;
-      transition: all 0.2s ease;
-    }
+  #panel h2 {
+    margin-top: 0;
+    color: #6cb4ff;
+  }
 
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      margin: 0;
-      padding: 0;
-    }
+  .section {
+    margin-top: 15px;
+  }
 
-    header {
-      position: sticky;
-      top: 0;
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid #ddd;
-      padding: 15px 30px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      z-index: 100;
-    }
+  .section label {
+    font-size: 14px;
+    display: block;
+    margin-top: 5px;
+  }
 
-    header h1 {
-      font-weight: 800;
-      font-size: 28px;
-      margin: 0;
-      color: var(--secondary);
-    }
+  .section input, .section textarea, .section select {
+    width: 100%;
+    border: none;
+    border-radius: 10px;
+    padding: 8px;
+    margin-top: 5px;
+    outline: none;
+  }
 
-    header span {
-      font-weight: 500;
-      font-size: 14px;
-      color: var(--muted);
-    }
+  button {
+    background: royalblue;
+    border: none;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    margin-top: 10px;
+    width: 100%;
+    transition: 0.2s;
+  }
 
-    main {
-      max-width: 1100px;
-      margin: 40px auto;
-      padding: 0 20px;
-    }
+  button:hover {
+    background: #5c8df8;
+  }
 
-    h2 {
-      font-size: 20px;
-      font-weight: 700;
-      margin-bottom: 15px;
-      color: var(--secondary);
-    }
+  /* --- ATC Overlay --- */
+  #atc-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,10,25,0.95);
+    z-index: 2000;
+    backdrop-filter: blur(15px);
+    overflow-y: auto;
+    padding: 40px;
+  }
 
-    .section {
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(10px);
-      border-radius: var(--radius);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      padding: 20px;
-      margin-bottom: 25px;
-    }
+  #atc-overlay h1 {
+    margin-top: 0;
+    color: #6cb4ff;
+  }
 
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 15px;
-    }
+  #close-atc {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    background: none;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    border: none;
+  }
 
-    .col {
-      flex: 1;
-      min-width: 230px;
-    }
+  #close-atc:hover {
+    color: #6cb4ff;
+  }
 
-    label {
-      display: block;
-      font-weight: 600;
-      font-size: 14px;
-      margin-bottom: 6px;
-      color: var(--muted);
-    }
-
-    input, select, textarea {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: var(--radius);
-      border: 1px solid #ccc;
-      background-color: #fff;
-      font-size: 15px;
-      color: var(--secondary);
-    }
-
-    input:focus, select:focus, textarea:focus {
-      border-color: var(--primary);
-      outline: none;
-      box-shadow: 0 0 4px rgba(76, 175, 80, 0.3);
-    }
-
-    .button-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    button {
-      padding: 10px 18px;
-      border-radius: var(--radius);
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      font-size: 15px;
-    }
-
-    #generate-btn {
-      background-color: var(--accent);
-      color: var(--secondary);
-    }
-
-    #atc-view-btn,
-    #import-btn,
-    #refreshBtn {
-      background-color: var(--secondary);
-      color: white;
-    }
-
-    button:hover {
-      opacity: 0.85;
-      transform: translateY(-1px);
-    }
-
-    #map {
-      height: 480px;
-      width: 100%;
-      border-radius: var(--radius);
-      margin-top: 25px;
-      overflow: hidden;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
-    }
-
-    #atc-panel {
-      display: none;
-      text-align: center;
-      padding: 30px;
-      border-radius: var(--radius);
-      background-color: #111;
-      color: #6dc000;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-      margin-top: 30px;
-    }
-
-    #back-btn {
-      display: none;
-      position: fixed;
-      top: 15px;
-      left: 15px;
-      background-color: var(--accent);
-      color: black;
-      font-weight: 700;
-      padding: 10px 20px;
-      border-radius: var(--radius);
-      border: none;
-      cursor: pointer;
-      z-index: 200;
-    }
-
-    textarea {
-      min-height: 100px;
-      resize: vertical;
-      background-color: #fff;
-    }
-
-    @media (max-width: 700px) {
-      header {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      .row {
-        flex-direction: column;
-      }
-    }
-  </style>
+</style>
 </head>
 <body>
-  <header>
-    <div>
-      <h1>BRFP</h1>
-      <span>Brick Rigs Flight Planner</span>
-    </div>
-  </header>
 
-  <main>
-    <!-- Flight Info -->
-    <div class="section">
-      <h2>Flight Info</h2>
-      <div class="row">
-        <div class="col"><label>Airline</label><input id="airline" /></div>
-        <div class="col"><label>Flight Number</label><input id="flight-number" /></div>
-        <div class="col">
-          <label>Type of Aircraft</label>
-          <select id="type-aircraft">
-            <option value="Passenger">Passenger</option>
-            <option value="Cargo">Cargo</option>
-            <option value="Combi">Combi</option>
-          </select>
-        </div>
-      </div>
-    </div>
+<div id="map"></div>
 
-    <!-- Aircraft Info -->
-    <div class="section">
-      <h2>Aircraft Info</h2>
-      <div class="row">
-        <div class="col"><label>Aircraft Type</label><input id="aircraft-type" /></div>
-        <div class="col"><label>Variant</label><input id="variant" /></div>
-        <div class="col"><label>Registration</label><input id="registration" /></div>
-        <div class="col"><label>Fuel Amount</label><input id="fuel" /></div>
-        <div class="col"><label>Empty Weight</label><input id="empty-weight" /></div>
-        <div class="col"><label>Full Weight</label><input id="full-weight" /></div>
-      </div>
-    </div>
-  
-    <!-- Buttons -->
-    <div class="button-bar">
-      <button id="atc-view-btn" onclick="openATCView()">ATC View</button>
-      <button id="generate-btn" onclick="handleGenerate()">Generate</button>
-      <button id="import-btn" onclick="document.getElementById('bfp-import').click();">Import</button>
-      <input type="file" id="bfp-import" style="display:none" onchange="importBFP(event)" />
-      <button onclick="findRoute()">Generate Real Route</button>
-      <button id="refreshBtn" onclick="loadAirportData()">Load Airport Data</button>
-    </div>
-
-
-
-
-  <textarea id="route-waypoints" placeholder="Route will appear here..."></textarea>
-  <div id="map"></div>
-  <!-- Map Info -->
+<div id="panel">
+  <h2>BRFP Tools</h2>
   <div class="section">
-    <h2>Map Info</h2>
-    <div class="row">
-      <div class="col"><label>Departure ICAO</label><input id="dep-icao" /></div>
-      <div class="col"><label>Route Waypoints</label><input id="map-route-waypoints" /></div> <!-- changed ID -->
-      <div class="col"><label>Arrival ICAO</label><input id="arr-icao" /></div>
-    </div>
+    <label>Route</label>
+    <textarea id="route-waypoints" placeholder="Enter waypoints separated by spaces..."></textarea>
+    <button id="draw-route">Draw Route</button>
+    <button id="open-atc">Open ATC View</button>
   </div>
 
+  <div class="section">
+    <h3>Map Info</h3>
+    <label>Departure ICAO</label>
+    <input id="dep-icao">
+    <label>Route Waypoints</label>
+    <input id="map-route-waypoints">
+    <label>Arrival ICAO</label>
+    <input id="arr-icao">
+  </div>
+</div>
 
-    <!-- ATC Panel -->
-    <div id="atc-panel">
-      <h2>ATC View</h2>
-      <div style="margin:10px 0;">Pin Time: <span id="atc-pin-time"></span></div>
-      <div style="margin:10px 0;">Hold Over Ocean: <span id="atc-hold-ocean"></span></div>
-      <div style="margin:10px 0;">Route: <span id="atc-route"></span></div>
-      <div style="margin:10px 0;">Waypoints: <span id="atc-waypoints"></span></div>
-      <div style="margin:10px 0;">Aircraft Type: <span id="atc-ac-type"></span></div>
-      <div style="margin:10px 0;">Callsign: <span id="atc-callsign"></span></div>
-      <div style="margin:10px 0;">Registration: <span id="atc-reg"></span></div>
-    </div>
-  </main>
+<!-- ATC Fullscreen Overlay -->
+<div id="atc-overlay">
+  <button id="close-atc">&times;</button>
+  <h1>ATC View</h1>
+  <p>All connected aircraft, routes, and active TFRs will appear here in a live radar view.</p>
+  <div id="atc-content">
+    <p style="opacity:0.6;">(Coming soon: aircraft tracking, radio logs, flight strips)</p>
+  </div>
+</div>
 
-  <!-- Back Button -->
-  <button id="back-btn" onclick="closeATCView()">← Back</button>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  // --- Leaflet Map ---
+  const map = L.map('map').setView([43.25, -79.87], 10); // Center near Hamilton
 
-  <script>
-    // ATC View toggle functions
-    function openATCView() {
-      document.getElementById('atc-panel').style.display = 'block';
-      document.getElementById('back-btn').style.display = 'block';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
 
-    function closeATCView() {
-      document.getElementById('atc-panel').style.display = 'none';
-      document.getElementById('back-btn').style.display = 'none';
-    }
-  </script>
+  let routeLayer;
 
-  <script src="script.js"></script>
+  // --- Draw Route Function ---
+  document.getElementById('draw-route').addEventListener('click', () => {
+    const input = document.getElementById('route-waypoints').value.trim();
+    if (!input) return alert("Enter waypoints separated by spaces!");
+
+    const points = input.split(' ').map(x => x.split(',').map(Number));
+    if (routeLayer) map.removeLayer(routeLayer);
+
+    routeLayer = L.polyline(points, { color: 'royalblue', weight: 4 }).addTo(map);
+    map.fitBounds(routeLayer.getBounds());
+  });
+
+  // --- ATC Overlay Controls ---
+  const atcOverlay = document.getElementById('atc-overlay');
+  document.getElementById('open-atc').onclick = () => atcOverlay.style.display = 'block';
+  document.getElementById('close-atc').onclick = () => atcOverlay.style.display = 'none';
+</script>
 </body>
 </html>
