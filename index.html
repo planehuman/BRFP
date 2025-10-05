@@ -3,201 +3,274 @@
 <head>
   <meta charset="UTF-8" />
   <title>BRFP - Brick Rigs Flight Planner</title>
-  <link rel="stylesheet" href="style.css" />
-  
-
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
-    body {
-      font-family: 'Open Sauce', sans-serif;
-      background-color: #fff6e2;
-      margin: 0;
-      padding: 20px;
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+    :root {
+      --primary: #4CAF50;
+      --secondary: #222;
+      --bg: #f8f7f2;
+      --accent: #c1ff72;
+      --text: #222;
+      --muted: #555;
+      --radius: 10px;
     }
 
-    h1 {
-      font-family: 'Archivo Black', sans-serif;
-      font-size: 36px;
-      margin-bottom: 10px;
+    * {
+      box-sizing: border-box;
+      transition: all 0.2s ease;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid #ddd;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+    }
+
+    header h1 {
+      font-weight: 800;
+      font-size: 28px;
+      margin: 0;
+      color: var(--secondary);
+    }
+
+    header span {
+      font-weight: 500;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 40px auto;
+      padding: 0 20px;
     }
 
     h2 {
-      font-family: 'Anton', sans-serif;
-      margin-top: 0;
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 15px;
+      color: var(--secondary);
     }
 
     .section {
-      margin-bottom: 20px;
-    }
-
-    .input-group {
-      margin-bottom: 10px;
-    }
-
-    label {
-      display: block;
-      font-weight: bold;
-      margin-bottom: 4px;
-    }
-
-    input, select, textarea {
-      width: 100%;
-      padding: 8px;
-      background-color: #919191;
-      color: #000;
-      border: none;
-      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      padding: 20px;
+      margin-bottom: 25px;
     }
 
     .row {
       display: flex;
       flex-wrap: wrap;
-      gap: 20px;
+      gap: 15px;
     }
 
     .col {
       flex: 1;
-      min-width: 250px;
+      min-width: 230px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 6px;
+      color: var(--muted);
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      border: 1px solid #ccc;
+      background-color: #fff;
+      font-size: 15px;
+      color: var(--secondary);
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary);
+      outline: none;
+      box-shadow: 0 0 4px rgba(76, 175, 80, 0.3);
     }
 
     .button-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
       margin-top: 20px;
     }
 
     button {
-      padding: 10px 20px;
-      font-weight: bold;
-      border: none;
+      padding: 10px 18px;
+      border-radius: var(--radius);
+      font-weight: 600;
       cursor: pointer;
-      margin-right: 10px;
-      border-radius: 4px;
+      border: none;
+      font-size: 15px;
     }
 
     #generate-btn {
-      background-color: #c1ff72;
+      background-color: var(--accent);
+      color: var(--secondary);
     }
 
-    #atc-view-btn, #import-btn {
-      background-color: #000;
+    #atc-view-btn,
+    #import-btn,
+    #refreshBtn {
+      background-color: var(--secondary);
       color: white;
+    }
+
+    button:hover {
+      opacity: 0.85;
+      transform: translateY(-1px);
     }
 
     #map {
-      height: 500px;
+      height: 480px;
       width: 100%;
-      margin-top: 30px;
+      border-radius: var(--radius);
+      margin-top: 25px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
     }
 
     #atc-panel {
-      color: white;
-      background: transparent;
+      display: none;
+      text-align: center;
+      padding: 30px;
+      border-radius: var(--radius);
+      background-color: #111;
+      color: #6dc000;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+      margin-top: 30px;
     }
 
+    #back-btn {
+      display: none;
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      background-color: var(--accent);
+      color: black;
+      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: var(--radius);
+      border: none;
+      cursor: pointer;
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+      background-color: #fff;
+    }
+
+    @media (max-width: 700px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .row {
+        flex-direction: column;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>BRFP</h1>
-  <h2>Brick Rigs Flight Planner</h2>
+  <header>
+    <div>
+      <h1>BRFP</h1>
+      <span>Brick Rigs Flight Planner</span>
+    </div>
+  </header>
 
-  <div class="section">
-    <h3>FLIGHT INFO</h3>
-    <div class="row">
-      <div class="col"><label>Airline</label><input id="airline" /></div>
-      <div class="col"><label>Flight Number</label><input id="flight-number" /></div>
-      <div class="col">
-        <label>Type of Aircraft</label>
-        <select id="type-aircraft">
-          <option value="Passenger">Passenger</option>
-          <option value="Cargo">Cargo</option>
-          <option value="Combi">Combi</option>
-        </select>
+  <main>
+    <div class="section">
+      <h2>Flight Info</h2>
+      <div class="row">
+        <div class="col"><label>Airline</label><input id="airline" /></div>
+        <div class="col"><label>Flight Number</label><input id="flight-number" /></div>
+        <div class="col">
+          <label>Type of Aircraft</label>
+          <select id="type-aircraft">
+            <option value="Passenger">Passenger</option>
+            <option value="Cargo">Cargo</option>
+            <option value="Combi">Combi</option>
+          </select>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="section">
-    <h3>AIRCRAFT INFO</h3>
-    <div class="row">
-      <div class="col"><label>Aircraft Type</label><input id="aircraft-type" /></div>
-      <div class="col"><label>Variant</label><input id="variant" /></div>
-      <div class="col"><label>Registration</label><input id="registration" /></div>
-      <div class="col"><label>Fuel Amount</label><input id="fuel" /></div>
-      <div class="col"><label>Empty Weight</label><input id="empty-weight" /></div>
-      <div class="col"><label>Full Weight</label><input id="full-weight" /></div>
-    </div>
-  </div>
-
-
-  <button id="atc-view-btn" onclick="openATCView()">ATC View</button>
-
-  <button id="back-btn" onclick="closeATCView()" style="display:none; position: absolute; top: 10px; left: 10px; background-color: #4d8900; color: black;">Back to Normal View</button>
-
-
-  <div id="atc-panel" style="display: none; text-align: center; margin-top: 40px;">
-    <h2 style="color: #6dc000; font-weight: bold;">ATC View</h2>
-
-    <h4 style="color: #6dc000;">TIME:</h4>
-    <div style="font-size: 1.2em; color: #6dc000;">Pin Time (ATC Watch This): <span id="atc-pin-time"></span></div>
-    <div style="font-size: 1.2em; color: #6dc000;">Hold Over Ocean?: <span id="atc-hold-ocean"></span></div>
-
-    <h4 style="color: #6dc000;">FLIGHT N AIRCRAFT INFO:</h4>
-    <div style="font-size: 1.5em; color: #6dc000;">Route: <span id="atc-route"></span></div>
-    <div style="font-size: 1.5em; color: #6dc000;">Waypoints: <span id="atc-waypoints"></span></div>
-
-    <div style="font-size: 1.5em; color: #6dc000;">Aircraft Type: <span id="atc-ac-type"></span></div>
-    <div style="font-size: 1.5em; color: #6dc000;">Callsign: <span id="atc-callsign"></span></div>
-    <div style="font-size: 1.5em; color: #6dc000;">Registration: <span id="atc-reg"></span></div>
-  </div>
-
-
-
-  <div class="section">
-    <h3>CARGO INFO</h3>
-    <div class="row">
-      <div class="col"><label>PAX on Board</label><input id="pax" /></div>
-      <div class="col"><label>Weight of Cargo</label><input id="cargo" /></div>
-      <div class="col">
-        <label>Hazardous Materials</label>
-        <select id="hazard">
-          <option value="">-- Select --</option>
-          <option value="Yes">Yes</option>
-          <option value="No">No</option>
-        </select>
+    <div class="section">
+      <h2>Aircraft Info</h2>
+      <div class="row">
+        <div class="col"><label>Aircraft Type</label><input id="aircraft-type" /></div>
+        <div class="col"><label>Variant</label><input id="variant" /></div>
+        <div class="col"><label>Registration</label><input id="registration" /></div>
+        <div class="col"><label>Fuel Amount</label><input id="fuel" /></div>
+        <div class="col"><label>Empty Weight</label><input id="empty-weight" /></div>
+        <div class="col"><label>Full Weight</label><input id="full-weight" /></div>
       </div>
     </div>
-  </div>
 
-  <div class="section">
-    <h3>TIME</h3>
-    <div class="row">
-      <div class="col"><label>Pin Time</label><input id="pin-time" /></div>
-      <div class="col"><label>Total Time</label><input id="total-time" /></div>
+    <div class="button-bar">
+      <button id="atc-view-btn" onclick="openATCView()">ATC View</button>
+      <button id="generate-btn" onclick="handleGenerate()">Generate</button>
+      <button id="import-btn" onclick="document.getElementById('bfp-import').click();">Import</button>
+      <input type="file" id="bfp-import" style="display:none" onchange="importBFP(event)" />
+      <button onclick="findRoute()">Generate Real Route</button>
+      <button id="refreshBtn" onclick="loadAirportData()">Load Airport Data</button>
     </div>
-  </div>
 
-  <div class="button-bar">
-    <button id="generate-btn" onclick="handleGenerate()">Generate</button>
-    <button id="import-btn" onclick="document.getElementById('bfp-import').click();">Import</button>
-    <button onclick="findRoute()">Generate Real Route</button>
-    <input type="file" id="bfp-import" style="display:none" onchange="importBFP(event)"/>
-    <button id="refreshBtn" onclick="loadAirportData()">Load Airport Data</button>
-  </div>
-  
-  <textarea id="route-waypoints" rows="4" cols="50" placeholder="Route will appear here..."></textarea>
+    <textarea id="route-waypoints" placeholder="Route will appear here..."></textarea>
 
-<div id="map"></div>
+    <div id="map"></div>
 
-  <div class="section">
-    <h3>MAP INFO</h3>
-    <div class="row">
-      
-      <div class="col"><label>Departure ICAO</label><input id="dep-icao" /></div>
-      <div class="col"><label>Route Waypoints</label><input id="route-waypoints" /></div>
-      <div class="col"><label>Arrival ICAO</label><input id="arr-icao" /></div>
+    <div class="section">
+      <h2>Map Info</h2>
+      <div class="row">
+        <div class="col"><label>Departure ICAO</label><input id="dep-icao" /></div>
+        <div class="col"><label>Route Waypoints</label><input id="route-waypoints2" /></div>
+        <div class="col"><label>Arrival ICAO</label><input id="arr-icao" /></div>
+      </div>
     </div>
-  </div>
+
+    <div id="atc-panel">
+      <h2>ATC View</h2>
+      <div>Pin Time: <span id="atc-pin-time"></span></div>
+      <div>Hold Over Ocean: <span id="atc-hold-ocean"></span></div>
+      <div>Route: <span id="atc-route"></span></div>
+      <div>Waypoints: <span id="atc-waypoints"></span></div>
+      <div>Aircraft Type: <span id="atc-ac-type"></span></div>
+      <div>Callsign: <span id="atc-callsign"></span></div>
+      <div>Registration: <span id="atc-reg"></span></div>
+    </div>
+  </main>
+
+  <button id="back-btn" onclick="closeATCView()">← Back</button>
 
   <script src="script.js"></script>
 </body>
